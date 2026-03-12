@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>ClaudeVoice</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.claude.voice</string>
+    <key>CFBundleName</key>
+    <string>ClaudeVoice</string>
+    <key>CFBundleDisplayName</key>
+    <string>Claude Voice</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Claude Voice needs microphone access to detect the "ok reply" voice trigger and for direct voice input mode.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Claude Voice uses speech recognition to detect when you say "ok reply" to finish dictation.</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>

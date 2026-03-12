@@ -1,0 +1,4 @@
+.build/
+ClaudeVoice.app/
+.DS_Store
+*.swp
