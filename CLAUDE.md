@@ -6,15 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Every code change requires the full cycle:
 ```bash
-pkill -f "ClaudeVoice" 2>/dev/null
-rm -rf ClaudeVoice.app
+make run
+```
+
+This builds, kills the running app, removes it from /Applications, reinstalls, and opens it. Equivalent to:
+```bash
 swift build -c release
-BUILD_DIR=$(swift build -c release --show-bin-path)
-mkdir -p ClaudeVoice.app/Contents/{MacOS,Resources}
-cp "$BUILD_DIR/ClaudeVoice" ClaudeVoice.app/Contents/MacOS/
-cp Resources/Info.plist ClaudeVoice.app/Contents/
-codesign --force --sign - ClaudeVoice.app
-open ClaudeVoice.app
+pkill -f "ClaudeVoice" 2>/dev/null
+rm -rf /Applications/ClaudeVoice.app
+cp -R ClaudeVoice.app /Applications/ClaudeVoice.app
+open /Applications/ClaudeVoice.app
 ```
 
 **Always verify the floating panel is visible after launch.** The panel uses `canBecomeKey: false` so it must use `orderFrontRegardless()`, never `makeKeyAndOrderFront()`. Ad-hoc codesign changes identity each rebuild which can invalidate macOS permissions.

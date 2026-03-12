@@ -1,5 +1,6 @@
 APP_NAME = ClaudeVoice
 APP_BUNDLE = $(APP_NAME).app
+INSTALL_DIR = /Applications
 BUILD_DIR = $(shell swift build -c release --show-bin-path 2>/dev/null)
 
 .PHONY: build run install clean
@@ -11,15 +12,19 @@ build:
 	@mkdir -p $(APP_BUNDLE)/Contents/Resources
 	@cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/
 	@cp Resources/Info.plist $(APP_BUNDLE)/Contents/
+	@cp Resources/AppIcon.icns $(APP_BUNDLE)/Contents/Resources/
 	@codesign --force --sign - $(APP_BUNDLE)
 	@echo "Built: $(APP_BUNDLE)"
 
-run: build
-	open $(APP_BUNDLE)
+run: install
+	open $(INSTALL_DIR)/$(APP_BUNDLE)
 
-install:
-	chmod +x install.sh
-	./install.sh
+install: build
+	@pkill -f "ClaudeVoice" 2>/dev/null || true
+	@sleep 0.5
+	@rm -rf $(INSTALL_DIR)/$(APP_BUNDLE)
+	@cp -R $(APP_BUNDLE) $(INSTALL_DIR)/$(APP_BUNDLE)
+	@echo "Installed: $(INSTALL_DIR)/$(APP_BUNDLE)"
 
 clean:
 	swift package clean

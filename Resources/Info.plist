@@ -26,6 +26,8 @@
     <string>Claude Voice needs microphone access to detect the "ok reply" voice trigger and for direct voice input mode.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Claude Voice uses speech recognition to detect when you say "ok reply" to finish dictation.</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>
