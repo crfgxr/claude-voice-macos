@@ -9,6 +9,12 @@ enum VoiceState: String {
     case processing
 }
 
+enum ResponseMode: String {
+    case full
+    case summary
+    case notify
+}
+
 final class AppState: ObservableObject {
     static let shared = AppState()
 
@@ -16,6 +22,13 @@ final class AppState: ObservableObject {
     @Published var audioLevel: CGFloat = 0.0
     @Published var isMuted: Bool = false
     @Published var autoVoiceEnabled: Bool = false
+    @Published var responseMode: ResponseMode = {
+        if let raw = UserDefaults.standard.string(forKey: "responseMode"),
+           let mode = ResponseMode(rawValue: raw) {
+            return mode
+        }
+        return .full
+    }()
     @Published var currentMessage: String = ""
     @Published var isVisible: Bool = true
     @Published var statusText: String = "Ready"
@@ -82,14 +95,41 @@ final class AppState: ObservableObject {
         VoiceManager.shared.stopSpeaking()
 
         currentMessage = message
+
+        let textToSpeak: String
+        switch responseMode {
+        case .full:
+            textToSpeak = message
+        case .summary:
+            // First + last sentence
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            let sentences = trimmed.components(separatedBy: CharacterSet(charactersIn: ".!?\n"))
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+            if sentences.count <= 2 {
+                textToSpeak = trimmed
+            } else {
+                let first = sentences[0]
+                let last = sentences[sentences.count - 1]
+                textToSpeak = first + ". " + last + "."
+            }
+        case .notify:
+            textToSpeak = "Hey, I'm done. Check it out."
+        }
+
         state = .speaking
         statusText = "Speaking..."
 
-        VoiceManager.shared.speak(message) { [weak self] in
+        VoiceManager.shared.speak(textToSpeak) { [weak self] in
             DispatchQueue.main.async {
                 guard let self = self, self.state == .speaking else { return }
                 self.startListening()
             }
         }
+    }
+
+    func setResponseMode(_ mode: ResponseMode) {
+        responseMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: "responseMode")
     }
 }

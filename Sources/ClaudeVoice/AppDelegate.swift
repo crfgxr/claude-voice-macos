@@ -32,7 +32,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(NSMenuItem(title: "Auto Voice After Response", action: #selector(toggleAutoVoice), keyEquivalent: ""))
+        // Response mode submenu
+        let responseModeItem = NSMenuItem(title: "Response Mode", action: nil, keyEquivalent: "")
+        let responseModeMenu = NSMenu()
+        responseModeMenu.addItem(NSMenuItem(title: "Full Response", action: #selector(setModeFull), keyEquivalent: ""))
+        responseModeMenu.addItem(NSMenuItem(title: "Summary (First Sentence)", action: #selector(setModeSummary), keyEquivalent: ""))
+        responseModeMenu.addItem(NSMenuItem(title: "Notify Only", action: #selector(setModeNotify), keyEquivalent: ""))
+        responseModeItem.submenu = responseModeMenu
+        menu.addItem(responseModeItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -72,9 +79,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func toggleAutoVoice() {
-        AppState.shared.autoVoiceEnabled.toggle()
-    }
+    @objc private func setModeFull() { AppState.shared.setResponseMode(.full) }
+    @objc private func setModeSummary() { AppState.shared.setResponseMode(.summary) }
+    @objc private func setModeNotify() { AppState.shared.setResponseMode(.notify) }
 
     @objc private func testTTS() {
         AppState.shared.handleHookMessage(
@@ -85,9 +92,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
+        let mode = AppState.shared.responseMode
         for item in menu.items {
-            if item.title == "Auto Voice After Response" {
-                item.state = AppState.shared.autoVoiceEnabled ? .on : .off
+            if let sub = item.submenu {
+                for subItem in sub.items {
+                    switch subItem.title {
+                    case "Full Response": subItem.state = mode == .full ? .on : .off
+                    case "Summary (First Sentence)": subItem.state = mode == .summary ? .on : .off
+                    case "Notify Only": subItem.state = mode == .notify ? .on : .off
+                    default: break
+                    }
+                }
             }
         }
     }
