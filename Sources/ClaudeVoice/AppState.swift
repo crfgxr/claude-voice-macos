@@ -37,7 +37,18 @@ final class AppState: ObservableObject {
         }
     }
 
+    func cancelListening() {
+        VoiceManager.shared.cancelRecording()
+        state = .idle
+        audioLevel = 0.0
+        statusText = "Ready"
+        liveTranscript = ""
+    }
+
     func startListening() {
+        // Auto-unmute when user explicitly starts listening
+        isMuted = false
+
         // Remember which app is focused RIGHT NOW (before anything changes)
         KeySimulator.shared.rememberFrontmostApp()
 

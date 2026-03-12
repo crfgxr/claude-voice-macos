@@ -49,8 +49,13 @@ struct ContentView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Mute button
-                Button(action: { appState.isMuted.toggle() }) {
+                // Mute button — also cancels listening
+                Button(action: {
+                    if appState.state == .listening {
+                        appState.cancelListening()
+                    }
+                    appState.isMuted.toggle()
+                }) {
                     Image(systemName: appState.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                         .font(.system(size: 10))
                         .foregroundColor(
