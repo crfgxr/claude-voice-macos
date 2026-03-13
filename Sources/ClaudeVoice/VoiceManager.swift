@@ -16,6 +16,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
     private var transcriptionBuffer: String = ""
     private var isRecording = false
     private var engineRunning = false
+    private var bargeInFrames = 0
 
     override init() {
         super.init()
@@ -44,11 +45,36 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        // Tap always installed — forward to recognizer only when isRecording
+        // Tap always installed — forward to recognizer when recording, detect barge-in when speaking
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            guard let self = self, self.isRecording else { return }
-            self.recognitionRequest?.append(buffer)
-            self.updateAudioLevel(buffer: buffer)
+            guard let self = self else { return }
+
+            if self.isRecording {
+                self.recognitionRequest?.append(buffer)
+                self.updateAudioLevel(buffer: buffer)
+            } else if AppState.shared.state == .speaking {
+                // Barge-in: detect voice, silently stop TTS and start listening
+                guard let channelData = buffer.floatChannelData?[0] else { return }
+                let frameLength = Int(buffer.frameLength)
+                var sum: Float = 0
+                for i in 0..<frameLength { sum += abs(channelData[i]) }
+                let avg = sum / Float(max(frameLength, 1))
+
+                if avg > 0.02 {
+                    self.bargeInFrames += 1
+                } else {
+                    self.bargeInFrames = 0
+                }
+
+                if self.bargeInFrames >= 1 {
+                    self.bargeInFrames = 0
+                    DispatchQueue.main.async {
+                        guard AppState.shared.state == .speaking else { return }
+                        VoiceManager.shared.stopSpeaking()
+                        AppState.shared.startListening()
+                    }
+                }
+            }
         }
 
         audioEngine.prepare()
@@ -212,8 +238,20 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
                 AppState.shared.liveTranscript = text
             }
 
-            // Auto-stop on "send it"
             let lower = text.lowercased()
+
+            // "delete message" — clear transcript and restart listening
+            if lower.hasSuffix("delete message") || lower.hasSuffix("delete message.") {
+                DispatchQueue.main.async {
+                    print("[ClaudeVoice] Delete message triggered — restarting")
+                    NSSound(named: .init("Purr"))?.play()
+                    AppState.shared.cancelListening()
+                    AppState.shared.startListening()
+                }
+                return
+            }
+
+            // "send it" — submit transcript
             if lower.hasSuffix("send it") || lower.hasSuffix("send it.") {
                 DispatchQueue.main.async {
                     AppState.shared.stopListening()
