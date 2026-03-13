@@ -110,6 +110,26 @@ All settings persist across app restarts.
 - Persistent audio engine — no clicks from hardware reconfiguration
 - Sound feedback: Tink on send, Pop on focus switch, Purr on delete, Funk on stop
 
+## Use Cases
+
+### Hands-Free Coding Sessions
+Sit back, talk through your ideas, and let Claude Code build it. No typing needed — just describe what you want, say "send it", hear the result, and keep iterating.
+
+### Accessibility
+Use Claude Code without a keyboard. Navigate split panes with "focus window", send slash commands with "cmd clear", and interrupt with "stop" — all by voice.
+
+### Multitasking While Coding
+Walk around, stretch, or grab coffee while Claude works. The app reads responses aloud through your AirPods and listens for your next instruction. Music keeps playing in the background.
+
+### Code Reviews & Debugging
+Describe bugs verbally: "There's a null pointer exception in the user service when the email field is empty, fix it, send it." Claude hears you, works on it, and reads back what it did.
+
+### Rapid Prototyping
+Voice is faster than typing for brainstorming. Speak your architecture ideas, UI changes, or feature requests naturally. Say "delete message" to start over if you misspeak.
+
+### Pair Programming with Claude
+Use multiple iTerm2 split panes — one for Claude Code, others for logs or servers. Switch between them with "focus window 2" and talk to Claude in whichever pane you need.
+
 ## Tech Stack
 
 - **Swift** + **SwiftUI** for the native macOS app
