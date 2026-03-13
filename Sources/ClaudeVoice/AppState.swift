@@ -35,6 +35,7 @@ final class AppState: ObservableObject {
     @Published var isVisible: Bool = true
     @Published var statusText: String = "Ready"
     @Published var liveTranscript: String = ""
+    var pendingMessage: String?
 
     private init() {}
 
@@ -85,15 +86,24 @@ final class AppState: ObservableObject {
             self.audioLevel = 0.0
             self.statusText = "Ready"
             self.liveTranscript = ""
+
+            // Play any message that arrived during recording
+            if let pending = self.pendingMessage {
+                self.pendingMessage = nil
+                self.handleHookMessage(pending)
+            }
         }
     }
 
     func handleHookMessage(_ message: String) {
         guard !isMuted, !message.isEmpty else { return }
 
+        // Don't interrupt active recording — queue message for after
         if state == .listening {
-            VoiceManager.shared.cancelRecording()
+            pendingMessage = message
+            return
         }
+
         VoiceManager.shared.stopSpeaking()
 
         currentMessage = message
