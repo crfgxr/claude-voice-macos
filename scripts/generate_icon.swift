@@ -116,7 +116,7 @@ func createIcon(size: Int) -> NSImage {
 }
 
 // Generate iconset
-let iconsetPath = "/Users/cagdas/CodTemp/claude-voice-macos/Resources/AppIcon.iconset"
+let iconsetPath = "/Users/cagdas/CodTemp/claude-code-handsfree/Resources/AppIcon.iconset"
 let fm = FileManager.default
 try? fm.removeItem(atPath: iconsetPath)
 try! fm.createDirectory(atPath: iconsetPath, withIntermediateDirectories: true)

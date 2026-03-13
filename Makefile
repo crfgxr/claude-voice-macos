@@ -21,10 +21,8 @@ run: install
 
 install: build
 	@pkill -f "ClaudeHandsFree" 2>/dev/null || true
-	@pkill -f "ClaudeVoice" 2>/dev/null || true
 	@sleep 0.5
 	@rm -rf $(INSTALL_DIR)/$(APP_BUNDLE)
-	@rm -rf $(INSTALL_DIR)/ClaudeVoice.app
 	@cp -R $(APP_BUNDLE) $(INSTALL_DIR)/$(APP_BUNDLE)
 	@echo "Installed: $(INSTALL_DIR)/$(APP_BUNDLE)"
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code Stop hook — sends last_assistant_message to ClaudeVoice app
+# Claude Code Stop hook — sends last_assistant_message to Claude Code Hands-Free app
 # Installed in ~/.claude/settings.json under hooks.Stop
 
 INPUT=$(cat)
@@ -15,7 +15,7 @@ if [ -z "$MESSAGE" ]; then
     exit 0
 fi
 
-# Send to ClaudeVoice app's local HTTP server
+# Send to Claude Code Hands-Free app's local HTTP server
 curl -s -X POST "http://localhost:27182/hook/stop" \
     -H "Content-Type: application/json" \
     -d "$(jq -n --arg msg "$MESSAGE" '{message: $msg}')" \

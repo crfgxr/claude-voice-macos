@@ -4,10 +4,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="ClaudeHandsFree"
 APP_BUNDLE="${APP_NAME}.app"
-HOOK_SCRIPT="${SCRIPT_DIR}/hooks/claude-voice-stop.sh"
+HOOK_SCRIPT="${SCRIPT_DIR}/hooks/claude-handsfree-stop.sh"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
-echo "=== Claude Voice Installer ==="
+echo "=== Claude Code Hands-Free Installer ==="
 echo ""
 
 # Step 1: Build
@@ -102,7 +102,7 @@ echo ""
 echo "=== How it works ==="
 echo ""
 echo "  - When Claude finishes responding, the Stop hook fires"
-echo "  - Claude Voice reads the response aloud via macOS TTS"
+echo "  - Claude Code Hands-Free reads the response aloud via macOS TTS"
 echo "  - After speaking, it activates voice mode (holds Space)"
 echo "  - Say 'ok reply' or click the stop button to submit"
 echo "  - Claude processes your voice input, and the cycle repeats"
