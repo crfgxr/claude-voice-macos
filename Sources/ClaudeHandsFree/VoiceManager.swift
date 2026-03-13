@@ -240,6 +240,30 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
             let lower = text.lowercased()
 
+            // Quick response mode: auto-submit when user says a number
+            if AppState.shared.awaitingQuickResponse {
+                let numberMap = [
+                    "one": "1", "two": "2", "three": "3", "four": "4",
+                    "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+                    "1": "1", "2": "2", "3": "3", "4": "4",
+                    "5": "5", "6": "6", "7": "7", "8": "8", "9": "9",
+                    "yes": "1", "yeah": "1", "yep": "1", "ok": "1", "okay": "1", "allow": "1",
+                    "no": "2", "nope": "2", "deny": "2", "reject": "2",
+                    "always": "3", "always allow": "3",
+                ]
+                // Check last word(s) for a number match
+                let words = lower.split(separator: " ")
+                let lastTwo = words.suffix(2).joined(separator: " ")
+                let lastOne = words.last.map(String.init) ?? ""
+
+                if let num = numberMap[lastTwo] ?? numberMap[lastOne] {
+                    DispatchQueue.main.async {
+                        AppState.shared.submitQuickResponse(num)
+                    }
+                    return
+                }
+            }
+
             // "focus window N" — switch to iTerm2 split pane N
             let focusPatterns = ["focus window 1", "focus window 2", "focus window 3", "focus window 4",
                                  "focus window one", "focus window two", "focus window three", "focus window four"]

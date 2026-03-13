@@ -35,6 +35,7 @@ final class AppState: ObservableObject {
     @Published var isVisible: Bool = true
     @Published var statusText: String = "Ready"
     @Published var liveTranscript: String = ""
+    @Published var awaitingQuickResponse: Bool = false
     var pendingMessage: String?
 
     private init() {}
@@ -105,6 +106,7 @@ final class AppState: ObservableObject {
         }
 
         VoiceManager.shared.stopSpeaking()
+        awaitingQuickResponse = false
 
         currentMessage = message
 
@@ -137,6 +139,47 @@ final class AppState: ObservableObject {
                 guard let self = self, self.state == .speaking else { return }
                 self.startListening()
             }
+        }
+    }
+
+    func handleNotificationMessage(_ message: String) {
+        guard !isMuted, !message.isEmpty else { return }
+
+        // Cancel any active recording
+        if state == .listening {
+            VoiceManager.shared.cancelRecording()
+        }
+
+        VoiceManager.shared.stopSpeaking()
+        currentMessage = message
+        awaitingQuickResponse = true
+
+        state = .speaking
+        statusText = "Permission..."
+
+        VoiceManager.shared.speak(message) { [weak self] in
+            DispatchQueue.main.async {
+                guard let self = self, self.state == .speaking else { return }
+                self.statusText = "Say a number..."
+                self.startListening()
+            }
+        }
+    }
+
+    func submitQuickResponse(_ number: String) {
+        awaitingQuickResponse = false
+        state = .processing
+        statusText = "Sending..."
+        VoiceManager.shared.cancelRecording()
+        NSSound(named: .init("Tink"))?.play()
+        KeySimulator.shared.pasteAndSubmit(number)
+
+        // Resume listening after sending
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            guard self.state == .processing else { return }
+            self.liveTranscript = ""
+            self.startListening()
         }
     }
 

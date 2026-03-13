@@ -96,6 +96,9 @@ final class HookServer {
     private func processHTTP(raw: String, connection: NWConnection) {
         var body = raw
 
+        // Extract request path
+        let isNotification = raw.contains("/hook/notification")
+
         // Extract body after HTTP headers
         if raw.hasPrefix("POST") || raw.hasPrefix("GET") || raw.hasPrefix("PUT") {
             if let range = raw.range(of: "\r\n\r\n") {
@@ -117,7 +120,11 @@ final class HookServer {
         }
 
         DispatchQueue.main.async {
-            AppState.shared.handleHookMessage(message)
+            if isNotification {
+                AppState.shared.handleNotificationMessage(message)
+            } else {
+                AppState.shared.handleHookMessage(message)
+            }
         }
 
         sendResponse(connection: connection, status: 200, body: "OK")
