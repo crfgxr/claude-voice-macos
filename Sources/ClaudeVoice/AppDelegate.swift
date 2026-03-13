@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import AVFoundation
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
@@ -48,6 +49,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(testItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        // Voice selection submenu
+        let voiceItem = NSMenuItem(title: "Voice", action: nil, keyEquivalent: "")
+        let voiceMenu = NSMenu()
+        // System default option — follows System Settings > Spoken Content
+        let systemItem = NSMenuItem(title: "System Default", action: #selector(selectVoice(_:)), keyEquivalent: "")
+        systemItem.representedObject = "system"
+        voiceMenu.addItem(systemItem)
+        voiceMenu.addItem(NSMenuItem.separator())
+
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix("en") && ($0.quality == .enhanced || $0.quality == .premium || $0.identifier.contains("siri")) }
+            .sorted { $0.quality.rawValue > $1.quality.rawValue || ($0.quality == $1.quality && $0.name < $1.name) }
+        for voice in voices {
+            let quality = voice.quality == .premium ? "Premium" : voice.quality == .enhanced ? "Enhanced" : "Siri"
+            let item = NSMenuItem(title: "\(voice.name) (\(quality))", action: #selector(selectVoice(_:)), keyEquivalent: "")
+            item.representedObject = voice.identifier
+            voiceMenu.addItem(item)
+        }
+        voiceItem.submenu = voiceMenu
+        menu.addItem(voiceItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        menu.addItem(NSMenuItem(title: "Voice Settings...", action: #selector(openSpokenContent), keyEquivalent: ","))
+
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit Claude Voice", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem?.menu = menu
@@ -83,6 +111,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func setModeSummary() { AppState.shared.setResponseMode(.summary) }
     @objc private func setModeNotify() { AppState.shared.setResponseMode(.notify) }
 
+    @objc private func selectVoice(_ sender: NSMenuItem) {
+        if let identifier = sender.representedObject as? String {
+            AppState.shared.setVoice(identifier)
+        }
+    }
+
+    @objc private func openSpokenContent() {
+        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.universalaccess?SpokenContent")!)
+    }
+
     @objc private func testTTS() {
         AppState.shared.handleHookMessage(
             "Hello! This is Claude Voice. I just finished a task. The tests are passing and the code has been committed."
@@ -93,14 +131,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         let mode = AppState.shared.responseMode
+        let selectedVoice = AppState.shared.selectedVoiceId
+        let panelVisible = floatingPanel?.isVisible ?? false
         for item in menu.items {
+            if item.action == #selector(togglePanel) {
+                item.title = panelVisible ? "Hide Panel" : "Show Panel"
+            }
             if let sub = item.submenu {
                 for subItem in sub.items {
+                    // Response mode checkmarks
                     switch subItem.title {
                     case "Full Response": subItem.state = mode == .full ? .on : .off
                     case "Summary (First Sentence)": subItem.state = mode == .summary ? .on : .off
                     case "Notify Only": subItem.state = mode == .notify ? .on : .off
                     default: break
+                    }
+                    // Voice selection checkmarks
+                    if subItem.action == #selector(selectVoice(_:)),
+                       let id = subItem.representedObject as? String {
+                        subItem.state = id == selectedVoice ? .on : .off
                     }
                 }
             }

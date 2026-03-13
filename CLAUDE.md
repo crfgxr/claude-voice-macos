@@ -49,12 +49,12 @@ Claude Code [Stop hook] → hook script → curl POST localhost:27182
 ### Components
 
 - **main.swift** — NSApplication entry point, `setActivationPolicy(.accessory)` (no dock icon)
-- **AppDelegate.swift** — Menu bar icon + floating panel setup + hook server start
-- **AppState.swift** — `@Published` state: idle/speaking/listening/processing. Coordinates all managers.
+- **AppDelegate.swift** — Menu bar icon + floating panel setup + hook server start. Menu includes: Show/Hide Panel, Response Mode (Full/Summary/Notify), Voice selection (System Default + Enhanced + Siri voices), Voice Settings (opens System Settings), Test TTS, Quit.
+- **AppState.swift** — `@Published` state: idle/speaking/listening/processing. Coordinates all managers. Stores response mode and voice selection in UserDefaults.
 - **FloatingPanel.swift** — `NSPanel` with `.nonactivatingPanel`, `canBecomeKey: false`, `canBecomeMain: false`. Uses `ClickThroughHostingView` (overrides `acceptsFirstMouse`) so buttons work without stealing focus.
 - **ContentView.swift** — Layout: waveform on top, controls on bottom (status text, mute, Speak Now / "Say 'Send It'" button). No close button — quit from menu bar only.
 - **WaveformView.swift** — 40-bar animated equalizer. Purple=speaking, blue=listening.
-- **VoiceManager.swift** — `AVSpeechSynthesizer` for TTS. `SFSpeechRecognizer` + `AVAudioEngine` for recording. Strips markdown before speaking. Detects "send it" trigger phrase.
+- **VoiceManager.swift** — `AVSpeechSynthesizer` for TTS with configurable voice (System Default, Enhanced, Siri). `SFSpeechRecognizer` + `AVAudioEngine` for recording. Strips markdown before speaking. Detects "send it" trigger phrase. CoreAudio ducking disabled so other audio keeps playing. Audio engine fully stopped before TTS to prevent corruption.
 - **HookServer.swift** — `NWListener` TCP server on port 27182. Parses HTTP POST or raw JSON with `{"message": "..."}`.
 - **KeySimulator.swift** — Sends transcribed text to iTerm2 via AppleScript `write text`. Currently iTerm2 only.
 

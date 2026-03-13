@@ -67,16 +67,33 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 
 | Control | Action |
 |---------|--------|
-| **Speak Now** button | Start listening |
+| **Speak Now** button | Start listening (auto-unmutes if muted) |
 | **Say "Send It"** button | Tap or say "send it" to submit |
-| **Mute** button | Mute TTS + cancel active recording |
-| **Menu bar icon** | Show/hide panel, quit app |
+| **Mute** button | Stops TTS, cancels recording, mutes app |
+| **Menu bar icon** | Settings, show/hide panel, quit app |
+
+### Menu Bar Settings
+
+- **Show/Hide Panel** — toggle the floating panel
+- **Response Mode** — how Claude's responses are read:
+  - **Full Response** — reads the entire response
+  - **Summary** — reads first + last sentence
+  - **Notify Only** — just says "Hey, I'm done. Check it out."
+- **Voice** — select TTS voice:
+  - **System Default** — follows System Settings > Spoken Content
+  - Enhanced voices (e.g., Allison Enhanced)
+  - Siri voices (e.g., Aaron, Nicky)
+- **Voice Settings...** — opens macOS Spoken Content settings to download new voices
+- **Test TTS** — test the current voice and response mode
+
+All settings persist across app restarts.
 
 ## Tech Stack
 
 - **Swift** + **SwiftUI** for the native macOS app
-- **AVSpeechSynthesizer** for text-to-speech (Allison Enhanced voice)
+- **AVSpeechSynthesizer** for text-to-speech (configurable voice)
 - **SFSpeechRecognizer** + **AVAudioEngine** for speech-to-text
+- **CoreAudio** for preventing audio ducking during recording
 - **NWListener** TCP server for receiving Claude Code hook messages
 - **AppleScript** for sending text to iTerm2
 

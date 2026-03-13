@@ -22,6 +22,8 @@ final class AppState: ObservableObject {
     @Published var audioLevel: CGFloat = 0.0
     @Published var isMuted: Bool = false
     @Published var autoVoiceEnabled: Bool = false
+    @Published var selectedVoiceId: String = UserDefaults.standard.string(forKey: "selectedVoiceId")
+        ?? "com.apple.voice.enhanced.en-US.Allison"
     @Published var responseMode: ResponseMode = {
         if let raw = UserDefaults.standard.string(forKey: "responseMode"),
            let mode = ResponseMode(rawValue: raw) {
@@ -131,5 +133,10 @@ final class AppState: ObservableObject {
     func setResponseMode(_ mode: ResponseMode) {
         responseMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: "responseMode")
+    }
+
+    func setVoice(_ identifier: String) {
+        selectedVoiceId = identifier
+        UserDefaults.standard.set(identifier, forKey: "selectedVoiceId")
     }
 }

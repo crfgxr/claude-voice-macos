@@ -1,13 +1,11 @@
 import AVFoundation
 import Speech
 import AppKit
-import CoreAudio
-import AudioToolbox
 
-final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
+final class VoiceManager: NSObject, AVAudioPlayerDelegate {
     static let shared = VoiceManager()
 
-    private let synthesizer = AVSpeechSynthesizer()
+    private var sayProcess: Process?
     private var speechCompletion: (() -> Void)?
     private var levelTimer: Timer?
 
@@ -19,59 +17,8 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
 
     override init() {
         super.init()
-        synthesizer.delegate = self
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-        configureAudioSession()
         requestPermissions()
-    }
-
-    private func configureAudioSession() {
-        // Disable ducking by setting the input device to not use voice processing
-        // On macOS, we use CoreAudio to prevent the system from ducking other audio
-        disableSystemDucking()
-    }
-
-    private func disableSystemDucking() {
-        // Get the default input device
-        var deviceID = AudioDeviceID(0)
-        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        var address = AudioObjectPropertyAddress(
-            mSelector: kAudioHardwarePropertyDefaultInputDevice,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-        AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &deviceID)
-
-        // 'vddo' = kAudioDevicePropertyVoiceActivityDuckOthers (macOS 15+)
-        let vddo = AudioObjectPropertySelector(0x7664646F)
-        var duckAddress = AudioObjectPropertyAddress(
-            mSelector: vddo,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain
-        )
-
-        if AudioObjectHasProperty(deviceID, &duckAddress) {
-            var duck: UInt32 = 0  // 0 = don't duck
-            let duckSize = UInt32(MemoryLayout<UInt32>.size)
-            let status = AudioObjectSetPropertyData(deviceID, &duckAddress, 0, nil, duckSize, &duck)
-            print("[ClaudeVoice] Set duck property: \(status == noErr ? "OK" : "error \(status)")")
-        } else {
-            print("[ClaudeVoice] Device doesn't support duck property, trying alternate approach")
-            // Fallback: try setting on system object
-            var sysDuck = AudioObjectPropertyAddress(
-                mSelector: vddo,
-                mScope: kAudioObjectPropertyScopeGlobal,
-                mElement: kAudioObjectPropertyElementMain
-            )
-            if AudioObjectHasProperty(AudioObjectID(kAudioObjectSystemObject), &sysDuck) {
-                var duck: UInt32 = 0
-                let duckSize = UInt32(MemoryLayout<UInt32>.size)
-                let status = AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &sysDuck, 0, nil, duckSize, &duck)
-                print("[ClaudeVoice] System duck property: \(status == noErr ? "OK" : "error \(status)")")
-            } else {
-                print("[ClaudeVoice] No ducking property available")
-            }
-        }
     }
 
     private func requestPermissions() {
@@ -83,37 +30,114 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
-    // MARK: - TTS
+    // MARK: - TTS via `say` (pre-render to file, then play for smooth audio)
+
+    private var audioPlayer: AVAudioPlayer?
+    private let ttsFileURL = FileManager.default.temporaryDirectory.appendingPathComponent("claudevoice_tts.aiff")
 
     func speak(_ text: String, completion: @escaping () -> Void) {
+        ensureRecordingStopped()
+
         speechCompletion = completion
         let cleaned = cleanForSpeech(text)
-        let utterance = AVSpeechUtterance(string: cleaned)
-        utterance.voice = AVSpeechSynthesisVoice(identifier: "com.apple.voice.enhanced.en-US.Allison")
-            ?? AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        utterance.volume = 1.0
-        synthesizer.speak(utterance)
+
+        guard !cleaned.isEmpty else {
+            DispatchQueue.main.async { completion() }
+            return
+        }
+
+        let voiceName = resolveVoiceName()
+
+        // Step 1: Pre-render speech to file (background thread)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/say")
+
+            var args = [String]()
+            if let voice = voiceName {
+                args += ["-v", voice]
+            }
+            args += ["-o", self.ttsFileURL.path, "-f", "-"]
+            process.arguments = args
+
+            let pipe = Pipe()
+            process.standardInput = pipe
+
+            do {
+                try process.run()
+                let data = cleaned.data(using: .utf8) ?? Data()
+                pipe.fileHandleForWriting.write(data)
+                pipe.fileHandleForWriting.closeFile()
+                process.waitUntilExit()
+
+                // Step 2: Play the rendered file on main thread
+                DispatchQueue.main.async {
+                    self.playRenderedSpeech()
+                }
+            } catch {
+                print("[ClaudeVoice] say render error: \(error)")
+                DispatchQueue.main.async {
+                    self.speechCompletion?()
+                    self.speechCompletion = nil
+                }
+            }
+        }
+
         startLevelSimulation()
+        print("[ClaudeVoice] TTS rendering with voice: \(voiceName ?? "default")")
+    }
+
+    private func playRenderedSpeech() {
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: ttsFileURL)
+            audioPlayer?.delegate = self
+            audioPlayer?.play()
+        } catch {
+            print("[ClaudeVoice] Playback error: \(error)")
+            stopLevelSimulation()
+            speechCompletion?()
+            speechCompletion = nil
+        }
     }
 
     func stopSpeaking() {
-        synthesizer.stopSpeaking(at: .immediate)
+        // Kill any in-progress render
+        if let process = sayProcess, process.isRunning {
+            process.terminate()
+        }
+        sayProcess = nil
+        // Stop playback
+        audioPlayer?.stop()
+        audioPlayer = nil
         stopLevelSimulation()
         speechCompletion = nil
     }
 
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        stopLevelSimulation()
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         DispatchQueue.main.async { [weak self] in
+            self?.stopLevelSimulation()
+            self?.audioPlayer = nil
             self?.speechCompletion?()
             self?.speechCompletion = nil
         }
     }
 
+    private func ensureRecordingStopped() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        recognitionRequest = nil
+        recognitionTask = nil
+    }
+
     private func startLevelSimulation() {
         levelTimer?.invalidate()
-        levelTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { _ in
+        levelTimer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
             DispatchQueue.main.async {
                 if AppState.shared.state == .speaking {
                     AppState.shared.audioLevel = CGFloat.random(in: 0.3...0.95)
@@ -195,14 +219,7 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     func stopDirectRecordingAndSubmit() {
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        recognitionRequest = nil
-        recognitionTask = nil
+        ensureRecordingStopped()
 
         var text = transcriptionBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
         let triggers = ["send it", "send it.", "send it!"]
@@ -225,19 +242,11 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
             return
         }
 
-        // Paste directly — no need to activate first, AppleScript handles it atomically
         KeySimulator.shared.pasteAndSubmit(text)
     }
 
     func cancelRecording() {
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        recognitionRequest = nil
-        recognitionTask = nil
+        ensureRecordingStopped()
         transcriptionBuffer = ""
     }
 
@@ -253,6 +262,54 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
         DispatchQueue.main.async {
             AppState.shared.audioLevel = max(mapped, 0.15)
         }
+    }
+
+    // MARK: - Voice resolution
+
+    private func resolveVoiceName() -> String? {
+        let selectedId = AppState.shared.selectedVoiceId
+        if selectedId == "system" {
+            return resolveSystemVoiceName()
+        }
+        // Get voice name from AVSpeechSynthesisVoice identifier
+        if let voice = AVSpeechSynthesisVoice(identifier: selectedId) {
+            return voice.name
+        }
+        // Fallback: extract last component from identifier
+        if let last = selectedId.components(separatedBy: ".").last, !last.isEmpty {
+            return last
+        }
+        return nil
+    }
+
+    private func resolveSystemVoiceName() -> String? {
+        guard let selections = UserDefaults(suiteName: "com.apple.Accessibility")?
+            .array(forKey: "SpokenContentDefaultVoiceSelectionsByLanguage"),
+              selections.count >= 2,
+              let dict = selections[1] as? [String: Any],
+              let voiceId = dict["voiceId"] as? String else {
+            print("[ClaudeVoice] Could not read system voice")
+            return nil
+        }
+
+        print("[ClaudeVoice] System voice ID: \(voiceId)")
+
+        if let voice = AVSpeechSynthesisVoice(identifier: voiceId) {
+            return voice.name
+        }
+
+        // Extract name from ID (e.g. "gryphon-neural_aaron_en-US_premium" → "aaron")
+        let parts = voiceId.lowercased().components(separatedBy: "_")
+        let allVoices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
+
+        for voice in allVoices {
+            if parts.contains(voice.name.lowercased()) {
+                print("[ClaudeVoice] Matched system voice: \(voice.name)")
+                return voice.name
+            }
+        }
+
+        return nil
     }
 
     private func cleanForSpeech(_ text: String) -> String {

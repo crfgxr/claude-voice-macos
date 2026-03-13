@@ -49,8 +49,14 @@ struct ContentView: View {
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Mute button — also cancels listening
+                // Mute button — stops speaking and cancels listening
                 Button(action: {
+                    if appState.state == .speaking {
+                        VoiceManager.shared.stopSpeaking()
+                        appState.state = .idle
+                        appState.audioLevel = 0.0
+                        appState.statusText = "Ready"
+                    }
                     if appState.state == .listening {
                         appState.cancelListening()
                     }
