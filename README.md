@@ -69,7 +69,9 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 |---------|--------|
 | **Speak Now** button | Start listening (auto-unmutes if muted) |
 | **Say "Send It"** button | Tap or say "send it" to submit |
+| **Reset** button (↺) | Clears transcript, restarts listening (visible while listening) |
 | **Mute** button | Stops TTS, cancels recording, mutes app |
+| **Settings** gear (⚙) | Opens macOS Spoken Content settings |
 | **Menu bar icon** | Settings, show/hide panel, quit app |
 
 ### Menu Bar Settings
@@ -91,9 +93,8 @@ All settings persist across app restarts.
 ## Tech Stack
 
 - **Swift** + **SwiftUI** for the native macOS app
-- **AVSpeechSynthesizer** for text-to-speech (configurable voice)
-- **SFSpeechRecognizer** + **AVAudioEngine** for speech-to-text
-- **CoreAudio** for preventing audio ducking during recording
+- **`say` command** for text-to-speech (pre-rendered to file, played via AVAudioPlayer — no audio conflicts)
+- **SFSpeechRecognizer** + persistent **AVAudioEngine** for speech-to-text (no hardware reconfiguration clicks)
 - **NWListener** TCP server for receiving Claude Code hook messages
 - **AppleScript** for sending text to iTerm2
 

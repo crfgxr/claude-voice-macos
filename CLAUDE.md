@@ -23,7 +23,7 @@ open /Applications/ClaudeVoice.app
 ## Goal
 
 Voice-driven hands-free interaction with Claude Code CLI:
-1. **Output (WORKS):** Claude Code `Stop` hook → HTTP POST to localhost:27182 → app reads response aloud via `AVSpeechSynthesizer`
+1. **Output (WORKS):** Claude Code `Stop` hook → HTTP POST to localhost:27182 → app reads response aloud via `say` command (pre-rendered to file, played via AVAudioPlayer)
 2. **Input (WORKS with iTerm2):** App records mic via `SFSpeechRecognizer` → transcribes → sends to iTerm2 via AppleScript `write text`
 
 After TTS finishes, the app automatically starts listening. User says "send it" to submit, creating a fully hands-free loop.
@@ -52,9 +52,9 @@ Claude Code [Stop hook] → hook script → curl POST localhost:27182
 - **AppDelegate.swift** — Menu bar icon + floating panel setup + hook server start. Menu includes: Show/Hide Panel, Response Mode (Full/Summary/Notify), Voice selection (System Default + Enhanced + Siri voices), Voice Settings (opens System Settings), Test TTS, Quit.
 - **AppState.swift** — `@Published` state: idle/speaking/listening/processing. Coordinates all managers. Stores response mode and voice selection in UserDefaults.
 - **FloatingPanel.swift** — `NSPanel` with `.nonactivatingPanel`, `canBecomeKey: false`, `canBecomeMain: false`. Uses `ClickThroughHostingView` (overrides `acceptsFirstMouse`) so buttons work without stealing focus.
-- **ContentView.swift** — Layout: waveform on top, controls on bottom (status text, mute, Speak Now / "Say 'Send It'" button). No close button — quit from menu bar only.
-- **WaveformView.swift** — 40-bar animated equalizer. Purple=speaking, blue=listening.
-- **VoiceManager.swift** — `AVSpeechSynthesizer` for TTS with configurable voice (System Default, Enhanced, Siri). `SFSpeechRecognizer` + `AVAudioEngine` for recording. Strips markdown before speaking. Detects "send it" trigger phrase. CoreAudio ducking disabled so other audio keeps playing. Audio engine fully stopped before TTS to prevent corruption.
+- **ContentView.swift** — Layout: waveform on top (with settings gear), controls on bottom (status text, reset, mute, Speak Now / "Say 'Send It'" button). No close button — quit from menu bar only.
+- **WaveformView.swift** — 30-bar animated equalizer at 15fps. Purple=speaking, blue=listening. Static when idle to save CPU.
+- **VoiceManager.swift** — TTS via `say` command (pre-renders to AIFF, plays via AVAudioPlayer — no audio conflicts). `SFSpeechRecognizer` + persistent `AVAudioEngine` for recording (engine runs continuously to avoid hardware reconfiguration clicks). Configurable voice (System Default, Enhanced, Siri). Strips markdown before speaking. Detects "send it" trigger phrase. "Tink" sound feedback on send.
 - **HookServer.swift** — `NWListener` TCP server on port 27182. Parses HTTP POST or raw JSON with `{"message": "..."}`.
 - **KeySimulator.swift** — Sends transcribed text to iTerm2 via AppleScript `write text`. Currently iTerm2 only.
 

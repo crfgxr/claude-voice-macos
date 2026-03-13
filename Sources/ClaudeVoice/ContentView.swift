@@ -17,13 +17,26 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top: waveform
-            WaveformView(
-                state: appState.state,
-                level: appState.audioLevel
-            )
-            .frame(height: 32)
-            .frame(maxWidth: .infinity)
+            // Top: waveform with settings button
+            ZStack(alignment: .topTrailing) {
+                WaveformView(
+                    state: appState.state,
+                    level: appState.audioLevel
+                )
+                .frame(height: 32)
+                .frame(maxWidth: .infinity)
+
+                Button(action: {
+                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.universalaccess?SpokenContent")!)
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 8))
+                        .foregroundColor(Color(hex: "6B6680"))
+                        .frame(width: 14, height: 14)
+                }
+                .buttonStyle(.plain)
+                .offset(x: -2, y: 2)
+            }
             .padding(.horizontal, 12)
             .padding(.top, 8)
 
@@ -48,6 +61,20 @@ struct ContentView: View {
                 .font(.system(size: 10, weight: .medium))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Reset button — clears transcript (only visible when listening)
+                if appState.state == .listening {
+                    Button(action: {
+                        appState.cancelListening()
+                        appState.startListening()
+                    }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(Color(hex: "6B6680"))
+                            .frame(width: 18, height: 18)
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // Mute button — stops speaking and cancels listening
                 Button(action: {
@@ -89,13 +116,12 @@ struct ContentView: View {
             .padding(.top, 4)
         }
         .frame(width: 300, height: 76)
-        .background(Color(hex: "1C1A2E"))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(
+        .background(
             RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
+                .fill(Color(hex: "1C1A2E"))
+                .shadow(color: .black.opacity(0.4), radius: 12, y: 6)
         )
-        .shadow(color: .black.opacity(0.4), radius: 12, y: 6)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 
     private var buttonLabel: String {

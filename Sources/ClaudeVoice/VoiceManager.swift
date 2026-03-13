@@ -14,11 +14,14 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var transcriptionBuffer: String = ""
+    private var isRecording = false
+    private var engineRunning = false
 
     override init() {
         super.init()
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         requestPermissions()
+        startPersistentEngine()
     }
 
     private func requestPermissions() {
@@ -35,8 +38,31 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
     private var audioPlayer: AVAudioPlayer?
     private let ttsFileURL = FileManager.default.temporaryDirectory.appendingPathComponent("claudevoice_tts.aiff")
 
+    // MARK: - Persistent Audio Engine (avoids hardware reconfiguration clicks)
+
+    private func startPersistentEngine() {
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+
+        // Tap always installed — forward to recognizer only when isRecording
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            guard let self = self, self.isRecording else { return }
+            self.recognitionRequest?.append(buffer)
+            self.updateAudioLevel(buffer: buffer)
+        }
+
+        audioEngine.prepare()
+        do {
+            try audioEngine.start()
+            engineRunning = true
+            print("[ClaudeVoice] Persistent audio engine started")
+        } catch {
+            print("[ClaudeVoice] Engine start error: \(error)")
+        }
+    }
+
     func speak(_ text: String, completion: @escaping () -> Void) {
-        ensureRecordingStopped()
+        stopRecognitionTask()
 
         speechCompletion = completion
         let cleaned = cleanForSpeech(text)
@@ -124,11 +150,8 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    private func ensureRecordingStopped() {
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
+    private func stopRecognitionTask() {
+        isRecording = false
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
         recognitionRequest = nil
@@ -164,24 +187,17 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             return
         }
 
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
+        // Restart engine if it died
+        if !engineRunning {
+            startPersistentEngine()
         }
-        audioEngine = AVAudioEngine()
-        transcriptionBuffer = ""
 
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        stopRecognitionTask()
+        transcriptionBuffer = ""
 
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let request = recognitionRequest else { return }
         request.shouldReportPartialResults = true
-
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-            self?.updateAudioLevel(buffer: buffer)
-        }
 
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             if let error = error {
@@ -205,21 +221,12 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             }
         }
 
-        audioEngine.prepare()
-        do {
-            try audioEngine.start()
-            print("[ClaudeVoice] Recording started")
-        } catch {
-            print("[ClaudeVoice] Mic error: \(error.localizedDescription)")
-            DispatchQueue.main.async {
-                AppState.shared.statusText = "Mic error"
-                AppState.shared.state = .idle
-            }
-        }
+        isRecording = true
+        print("[ClaudeVoice] Recording started (engine persistent)")
     }
 
     func stopDirectRecordingAndSubmit() {
-        ensureRecordingStopped()
+        stopRecognitionTask()
 
         var text = transcriptionBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
         let triggers = ["send it", "send it.", "send it!"]
@@ -242,11 +249,14 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             return
         }
 
+        // Play send sound feedback
+        NSSound(named: .init("Tink"))?.play()
+
         KeySimulator.shared.pasteAndSubmit(text)
     }
 
     func cancelRecording() {
-        ensureRecordingStopped()
+        stopRecognitionTask()
         transcriptionBuffer = ""
     }
 
