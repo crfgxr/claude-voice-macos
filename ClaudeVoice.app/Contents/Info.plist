@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>ClaudeHandsFree</string>
+    <string>ClaudeVoice</string>
     <key>CFBundleIdentifier</key>
-    <string>com.claude.handsfree</string>
+    <string>com.claude.voice</string>
     <key>CFBundleName</key>
-    <string>ClaudeHandsFree</string>
+    <string>ClaudeVoice</string>
     <key>CFBundleDisplayName</key>
-    <string>Claude Code Hands-Free</string>
+    <string>Claude Voice</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -23,9 +23,9 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Claude Code Hands-Free needs microphone access to detect the "ok reply" voice trigger and for direct voice input mode.</string>
+    <string>Claude Voice needs microphone access to detect the "ok reply" voice trigger and for direct voice input mode.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Claude Code Hands-Free uses speech recognition to detect when you say "ok reply" to finish dictation.</string>
+    <string>Claude Voice uses speech recognition to detect when you say "ok reply" to finish dictation.</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>

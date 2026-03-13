@@ -19,9 +19,9 @@ final class HookServer {
             listener?.stateUpdateHandler = { state in
                 switch state {
                 case .ready:
-                    print("[ClaudeVoice] Hook server listening on port \(self.port)")
+                    print("[HandsFree] Hook server listening on port \(self.port)")
                 case .failed(let error):
-                    print("[ClaudeVoice] Hook server failed: \(error)")
+                    print("[HandsFree] Hook server failed: \(error)")
                 default:
                     break
                 }
@@ -29,7 +29,7 @@ final class HookServer {
 
             listener?.start(queue: .global(qos: .userInitiated))
         } catch {
-            print("[ClaudeVoice] Failed to start hook server: \(error)")
+            print("[HandsFree] Failed to start hook server: \(error)")
         }
     }
 

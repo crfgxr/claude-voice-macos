@@ -27,10 +27,10 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
     private func requestPermissions() {
         SFSpeechRecognizer.requestAuthorization { status in
-            print("[ClaudeVoice] Speech: \(status == .authorized ? "OK" : "status \(status.rawValue)")")
+            print("[HandsFree] Speech: \(status == .authorized ? "OK" : "status \(status.rawValue)")")
         }
         AVCaptureDevice.requestAccess(for: .audio) { granted in
-            print("[ClaudeVoice] Mic: \(granted ? "OK" : "denied")")
+            print("[HandsFree] Mic: \(granted ? "OK" : "denied")")
         }
     }
 
@@ -81,9 +81,9 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         do {
             try audioEngine.start()
             engineRunning = true
-            print("[ClaudeVoice] Persistent audio engine started")
+            print("[HandsFree] Persistent audio engine started")
         } catch {
-            print("[ClaudeVoice] Engine start error: \(error)")
+            print("[HandsFree] Engine start error: \(error)")
         }
     }
 
@@ -129,7 +129,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
                     self.playRenderedSpeech()
                 }
             } catch {
-                print("[ClaudeVoice] say render error: \(error)")
+                print("[HandsFree] say render error: \(error)")
                 DispatchQueue.main.async {
                     self.speechCompletion?()
                     self.speechCompletion = nil
@@ -138,7 +138,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         }
 
         startLevelSimulation()
-        print("[ClaudeVoice] TTS rendering with voice: \(voiceName ?? "default")")
+        print("[HandsFree] TTS rendering with voice: \(voiceName ?? "default")")
     }
 
     private func playRenderedSpeech() {
@@ -147,7 +147,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             audioPlayer?.delegate = self
             audioPlayer?.play()
         } catch {
-            print("[ClaudeVoice] Playback error: \(error)")
+            print("[HandsFree] Playback error: \(error)")
             stopLevelSimulation()
             speechCompletion?()
             speechCompletion = nil
@@ -205,7 +205,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
     func startDirectRecording() {
         guard let recognizer = speechRecognizer, recognizer.isAvailable else {
-            print("[ClaudeVoice] Speech recognizer unavailable")
+            print("[HandsFree] Speech recognizer unavailable")
             DispatchQueue.main.async {
                 AppState.shared.statusText = "Speech unavailable"
                 AppState.shared.state = .idle
@@ -227,7 +227,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             if let error = error {
-                print("[ClaudeVoice] Recognition error: \(error.localizedDescription)")
+                print("[HandsFree] Recognition error: \(error.localizedDescription)")
                 return
             }
             guard let result = result else { return }
@@ -263,7 +263,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             // "stop" — send Escape key to iTerm2
             if lower.hasSuffix("stop") || lower.hasSuffix("stop.") || lower.hasSuffix("stop!") {
                 DispatchQueue.main.async {
-                    print("[ClaudeVoice] Stop triggered — sending Escape")
+                    print("[HandsFree] Stop triggered — sending Escape")
                     NSSound(named: .init("Funk"))?.play()
                     KeySimulator.shared.sendEscape()
                     AppState.shared.cancelListening()
@@ -275,7 +275,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             // "delete message" — clear transcript and restart listening
             if lower.hasSuffix("delete message") || lower.hasSuffix("delete message.") {
                 DispatchQueue.main.async {
-                    print("[ClaudeVoice] Delete message triggered — restarting")
+                    print("[HandsFree] Delete message triggered — restarting")
                     NSSound(named: .init("Purr"))?.play()
                     AppState.shared.cancelListening()
                     AppState.shared.startListening()
@@ -324,7 +324,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         }
 
         isRecording = true
-        print("[ClaudeVoice] Recording started (engine persistent)")
+        print("[HandsFree] Recording started (engine persistent)")
     }
 
     func stopDirectRecordingAndSubmit() {
@@ -340,10 +340,10 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
             }
         }
 
-        print("[ClaudeVoice] Final: \"\(text)\"")
+        print("[HandsFree] Final: \"\(text)\"")
 
         guard !text.isEmpty else {
-            print("[ClaudeVoice] Nothing to submit")
+            print("[HandsFree] Nothing to submit")
             DispatchQueue.main.async {
                 AppState.shared.liveTranscript = ""
                 AppState.shared.startListening()
@@ -400,11 +400,11 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
               selections.count >= 2,
               let dict = selections[1] as? [String: Any],
               let voiceId = dict["voiceId"] as? String else {
-            print("[ClaudeVoice] Could not read system voice")
+            print("[HandsFree] Could not read system voice")
             return nil
         }
 
-        print("[ClaudeVoice] System voice ID: \(voiceId)")
+        print("[HandsFree] System voice ID: \(voiceId)")
 
         if let voice = AVSpeechSynthesisVoice(identifier: voiceId) {
             return voice.name
@@ -416,7 +416,7 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
         for voice in allVoices {
             if parts.contains(voice.name.lowercased()) {
-                print("[ClaudeVoice] Matched system voice: \(voice.name)")
+                print("[HandsFree] Matched system voice: \(voice.name)")
                 return voice.name
             }
         }

@@ -2,7 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="ClaudeVoice"
+APP_NAME="ClaudeHandsFree"
 APP_BUNDLE="${APP_NAME}.app"
 HOOK_SCRIPT="${SCRIPT_DIR}/hooks/claude-voice-stop.sh"
 SETTINGS_FILE="$HOME/.claude/settings.json"

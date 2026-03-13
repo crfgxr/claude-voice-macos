@@ -12,10 +12,10 @@ make run
 This builds, kills the running app, removes it from /Applications, reinstalls, and opens it. Equivalent to:
 ```bash
 swift build -c release
-pkill -f "ClaudeVoice" 2>/dev/null
-rm -rf /Applications/ClaudeVoice.app
-cp -R ClaudeVoice.app /Applications/ClaudeVoice.app
-open /Applications/ClaudeVoice.app
+pkill -f "ClaudeHandsFree" 2>/dev/null
+rm -rf /Applications/ClaudeHandsFree.app
+cp -R ClaudeHandsFree.app /Applications/ClaudeHandsFree.app
+open /Applications/ClaudeHandsFree.app
 ```
 
 **Always verify the floating panel is visible after launch.** The panel uses `canBecomeKey: false` so it must use `orderFrontRegardless()`, never `makeKeyAndOrderFront()`. Ad-hoc codesign changes identity each rebuild which can invalidate macOS permissions.
@@ -60,7 +60,7 @@ Claude Code [Stop hook] → hook script → curl POST localhost:27182
 
 ### Hook Integration
 
-- Hook script: `hooks/claude-voice-stop.sh` — reads `last_assistant_message` from stdin JSON, POSTs to app
+- Hook script: `hooks/claude-handsfree-stop.sh` — reads `last_assistant_message` from stdin JSON, POSTs to app
 - Installed in `~/.claude/settings.json` under `hooks.Stop` (async)
 - The hook correctly fires and delivers messages to the app
 

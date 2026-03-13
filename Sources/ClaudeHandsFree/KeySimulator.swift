@@ -9,7 +9,7 @@ final class KeySimulator {
 
     func rememberFrontmostApp() {
         lastFrontmostApp = NSWorkspace.shared.frontmostApplication
-        print("[ClaudeVoice] Remembered frontmost: \(lastFrontmostApp?.localizedName ?? "none")")
+        print("[HandsFree] Remembered frontmost: \(lastFrontmostApp?.localizedName ?? "none")")
     }
 
     // MARK: - Paste text into iTerm2 via AppleScript
@@ -17,7 +17,7 @@ final class KeySimulator {
     // MARK: - Focus a specific iTerm2 split pane
 
     func focusSession(_ index: Int) {
-        print("[ClaudeVoice] Focusing iTerm2 session \(index)")
+        print("[HandsFree] Focusing iTerm2 session \(index)")
 
         let script = """
         tell application "iTerm2"
@@ -29,7 +29,7 @@ final class KeySimulator {
 
         runOsascript(script) { success in
             if success {
-                print("[ClaudeVoice] Focused session \(index)")
+                print("[HandsFree] Focused session \(index)")
             }
         }
     }
@@ -37,7 +37,7 @@ final class KeySimulator {
     // MARK: - Send Escape key to iTerm2
 
     func sendEscape() {
-        print("[ClaudeVoice] Sending Escape to iTerm2")
+        print("[HandsFree] Sending Escape to iTerm2")
         let script = """
         tell application "iTerm2"
             tell current session of current window
@@ -46,14 +46,14 @@ final class KeySimulator {
         end tell
         """
         runOsascript(script) { success in
-            if success { print("[ClaudeVoice] Escape sent") }
+            if success { print("[HandsFree] Escape sent") }
         }
     }
 
     // MARK: - Paste text into iTerm2
 
     func pasteAndSubmit(_ text: String) {
-        print("[ClaudeVoice] Sending to iTerm2: \(text.prefix(80))...")
+        print("[HandsFree] Sending to iTerm2: \(text.prefix(80))...")
 
         // Escape text for AppleScript string (backslashes first, then quotes)
         let escaped = text
@@ -70,7 +70,7 @@ final class KeySimulator {
 
         runOsascript(script) { success in
             if success {
-                print("[ClaudeVoice] iTerm2 write text succeeded")
+                print("[HandsFree] iTerm2 write text succeeded")
             }
         }
     }
@@ -95,11 +95,11 @@ final class KeySimulator {
                 } else {
                     let errData = pipe.fileHandleForReading.readDataToEndOfFile()
                     let errStr = String(data: errData, encoding: .utf8) ?? "unknown"
-                    print("[ClaudeVoice] AppleScript error: \(errStr)")
+                    print("[HandsFree] AppleScript error: \(errStr)")
                     completion?(false)
                 }
             } catch {
-                print("[ClaudeVoice] osascript launch error: \(error)")
+                print("[HandsFree] osascript launch error: \(error)")
                 completion?(false)
             }
         }

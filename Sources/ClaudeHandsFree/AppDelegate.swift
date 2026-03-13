@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem?.button {
             button.image = NSImage(
                 systemSymbolName: "waveform.circle.fill",
-                accessibilityDescription: "Claude Voice"
+                accessibilityDescription: "Claude Code Hands-Free"
             )
         }
 
@@ -76,7 +76,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Voice Settings...", action: #selector(openSpokenContent), keyEquivalent: ","))
 
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit Claude Voice", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Claude Code Hands-Free", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem?.menu = menu
     }
@@ -93,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 panel.setIsVisible(true)
                 panel.orderFrontRegardless()
             }
-            print("[ClaudeVoice] Panel visible: \(panel.isVisible), frame: \(panel.frame)")
+            print("[HandsFree] Panel visible: \(panel.isVisible), frame: \(panel.frame)")
         }
     }
 
@@ -123,7 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func testTTS() {
         AppState.shared.handleHookMessage(
-            "Hello! This is Claude Voice. I just finished a task. The tests are passing and the code has been committed."
+            "Hello! This is Claude Code Hands-Free. I just finished a task. The tests are passing and the code has been committed."
         )
     }
 }

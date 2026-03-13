@@ -46,7 +46,7 @@ final class FloatingPanel: NSPanel {
         hostingView.frame = NSRect(origin: .zero, size: panelRect.size)
         contentView = hostingView
 
-        print("[ClaudeVoice] Panel created at \(frame)")
+        print("[HandsFree] Panel created at \(frame)")
     }
 
     override var canBecomeKey: Bool { false }

@@ -1,4 +1,4 @@
-APP_NAME = ClaudeVoice
+APP_NAME = ClaudeHandsFree
 APP_BUNDLE = $(APP_NAME).app
 INSTALL_DIR = /Applications
 BUILD_DIR = $(shell swift build -c release --show-bin-path 2>/dev/null)
@@ -20,9 +20,11 @@ run: install
 	open $(INSTALL_DIR)/$(APP_BUNDLE)
 
 install: build
+	@pkill -f "ClaudeHandsFree" 2>/dev/null || true
 	@pkill -f "ClaudeVoice" 2>/dev/null || true
 	@sleep 0.5
 	@rm -rf $(INSTALL_DIR)/$(APP_BUNDLE)
+	@rm -rf $(INSTALL_DIR)/ClaudeVoice.app
 	@cp -R $(APP_BUNDLE) $(INSTALL_DIR)/$(APP_BUNDLE)
 	@echo "Installed: $(INSTALL_DIR)/$(APP_BUNDLE)"
 
