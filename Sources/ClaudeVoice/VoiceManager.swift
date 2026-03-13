@@ -1,6 +1,8 @@
 import AVFoundation
 import Speech
 import AppKit
+import CoreAudio
+import AudioToolbox
 
 final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
     static let shared = VoiceManager()
@@ -19,7 +21,57 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
         super.init()
         synthesizer.delegate = self
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        configureAudioSession()
         requestPermissions()
+    }
+
+    private func configureAudioSession() {
+        // Disable ducking by setting the input device to not use voice processing
+        // On macOS, we use CoreAudio to prevent the system from ducking other audio
+        disableSystemDucking()
+    }
+
+    private func disableSystemDucking() {
+        // Get the default input device
+        var deviceID = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &deviceID)
+
+        // 'vddo' = kAudioDevicePropertyVoiceActivityDuckOthers (macOS 15+)
+        let vddo = AudioObjectPropertySelector(0x7664646F)
+        var duckAddress = AudioObjectPropertyAddress(
+            mSelector: vddo,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        if AudioObjectHasProperty(deviceID, &duckAddress) {
+            var duck: UInt32 = 0  // 0 = don't duck
+            let duckSize = UInt32(MemoryLayout<UInt32>.size)
+            let status = AudioObjectSetPropertyData(deviceID, &duckAddress, 0, nil, duckSize, &duck)
+            print("[ClaudeVoice] Set duck property: \(status == noErr ? "OK" : "error \(status)")")
+        } else {
+            print("[ClaudeVoice] Device doesn't support duck property, trying alternate approach")
+            // Fallback: try setting on system object
+            var sysDuck = AudioObjectPropertyAddress(
+                mSelector: vddo,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            if AudioObjectHasProperty(AudioObjectID(kAudioObjectSystemObject), &sysDuck) {
+                var duck: UInt32 = 0
+                let duckSize = UInt32(MemoryLayout<UInt32>.size)
+                let status = AudioObjectSetPropertyData(AudioObjectID(kAudioObjectSystemObject), &sysDuck, 0, nil, duckSize, &duck)
+                print("[ClaudeVoice] System duck property: \(status == noErr ? "OK" : "error \(status)")")
+            } else {
+                print("[ClaudeVoice] No ducking property available")
+            }
+        }
     }
 
     private func requestPermissions() {
@@ -95,12 +147,12 @@ final class VoiceManager: NSObject, AVSpeechSynthesizerDelegate {
         audioEngine = AVAudioEngine()
         transcriptionBuffer = ""
 
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let request = recognitionRequest else { return }
         request.shouldReportPartialResults = true
-
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)

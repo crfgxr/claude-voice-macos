@@ -83,10 +83,8 @@ struct ContentView: View {
             .padding(.top, 4)
         }
         .frame(width: 300, height: 76)
-        .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color(hex: "1C1A2E"))
-        )
+        .background(Color(hex: "1C1A2E"))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(
             RoundedRectangle(cornerRadius: 18)
                 .strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
