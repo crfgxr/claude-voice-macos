@@ -45,7 +45,7 @@ struct ContentView: View {
                 // Status text / live transcript
                 Group {
                     if appState.state == .listening {
-                        Text(appState.liveTranscript.isEmpty ? "Listening..." : String(appState.liveTranscript.suffix(50)))
+                        Text(appState.liveTranscript.isEmpty ? "Listening..." : lastWords(appState.liveTranscript, count: 5))
                             .foregroundColor(.white.opacity(0.6))
                     } else if appState.state == .speaking {
                         Text("Claude Speaking...")
@@ -131,6 +131,12 @@ struct ContentView: View {
         case .speaking: return "Stop"
         case .processing: return "Sending"
         }
+    }
+
+    private func lastWords(_ text: String, count: Int) -> String {
+        let words = text.split(separator: " ")
+        if words.count <= count { return text }
+        return words.suffix(count).joined(separator: " ")
     }
 
     private var buttonTextColor: Color {

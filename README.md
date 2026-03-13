@@ -63,7 +63,21 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 5. Speak your reply, then say **"send it"** to submit
 6. Repeat — fully hands-free loop
 
-### Controls
+### Voice Commands
+
+| Command | Action |
+|---------|--------|
+| **"send it"** | Submit your message to Claude Code |
+| **"stop"** | Send Escape key to iTerm2 (interrupts Claude Code) |
+| **"delete message"** | Clear transcript and start over |
+| **"command X"** / **"cmd X"** | Type `/X` as a slash command (e.g., "cmd clear" → `/clear`) |
+| **"focus window 1-4"** | Switch to iTerm2 split pane 1-4 |
+
+### Barge-in
+
+Start speaking while Claude is talking — TTS stops immediately and switches to listening mode. No button press needed.
+
+### Panel Controls
 
 | Control | Action |
 |---------|--------|
@@ -72,7 +86,6 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 | **Reset** button (↺) | Clears transcript, restarts listening (visible while listening) |
 | **Mute** button | Stops TTS, cancels recording, mutes app |
 | **Settings** gear (⚙) | Opens macOS Spoken Content settings |
-| **Menu bar icon** | Settings, show/hide panel, quit app |
 
 ### Menu Bar Settings
 
@@ -90,13 +103,20 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 
 All settings persist across app restarts.
 
+### Audio
+
+- Music keeps playing during recording — no audio ducking
+- TTS pre-rendered to file for smooth playback under CPU load
+- Persistent audio engine — no clicks from hardware reconfiguration
+- Sound feedback: Tink on send, Pop on focus switch, Purr on delete, Funk on stop
+
 ## Tech Stack
 
 - **Swift** + **SwiftUI** for the native macOS app
 - **`say` command** for text-to-speech (pre-rendered to file, played via AVAudioPlayer — no audio conflicts)
 - **SFSpeechRecognizer** + persistent **AVAudioEngine** for speech-to-text (no hardware reconfiguration clicks)
 - **NWListener** TCP server for receiving Claude Code hook messages
-- **AppleScript** for sending text to iTerm2
+- **AppleScript** for sending text and commands to iTerm2
 
 ## Terminal Support
 

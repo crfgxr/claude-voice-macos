@@ -54,9 +54,9 @@ Claude Code [Stop hook] → hook script → curl POST localhost:27182
 - **FloatingPanel.swift** — `NSPanel` with `.nonactivatingPanel`, `canBecomeKey: false`, `canBecomeMain: false`. Uses `ClickThroughHostingView` (overrides `acceptsFirstMouse`) so buttons work without stealing focus.
 - **ContentView.swift** — Layout: waveform on top (with settings gear), controls on bottom (status text, reset, mute, Speak Now / "Say 'Send It'" button). No close button — quit from menu bar only.
 - **WaveformView.swift** — 30-bar animated equalizer at 15fps. Purple=speaking, blue=listening. Static when idle to save CPU.
-- **VoiceManager.swift** — TTS via `say` command (pre-renders to AIFF, plays via AVAudioPlayer — no audio conflicts). `SFSpeechRecognizer` + persistent `AVAudioEngine` for recording (engine runs continuously to avoid hardware reconfiguration clicks). Configurable voice (System Default, Enhanced, Siri). Strips markdown before speaking. Detects "send it" trigger phrase. "Tink" sound feedback on send.
+- **VoiceManager.swift** — TTS via `say` command (pre-renders to AIFF, plays via AVAudioPlayer — no audio conflicts). `SFSpeechRecognizer` + persistent `AVAudioEngine` for recording (engine runs continuously to avoid hardware reconfiguration clicks). Configurable voice (System Default, Enhanced, Siri). Strips markdown before speaking. Voice commands: "send it" (submit), "stop" (Escape), "delete message" (clear), "cmd/command X" (slash commands), "focus window N" (switch pane). Barge-in detection stops TTS when user speaks. Sound feedback on actions.
 - **HookServer.swift** — `NWListener` TCP server on port 27182. Parses HTTP POST or raw JSON with `{"message": "..."}`.
-- **KeySimulator.swift** — Sends transcribed text to iTerm2 via AppleScript `write text`. Currently iTerm2 only.
+- **KeySimulator.swift** — Sends transcribed text to iTerm2 via AppleScript `write text`. Also supports Escape key and split pane focus switching. Currently iTerm2 only.
 
 ### Hook Integration
 

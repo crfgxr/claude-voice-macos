@@ -80,17 +80,18 @@ final class AppState: ObservableObject {
         statusText = "Sending..."
         VoiceManager.shared.stopDirectRecordingAndSubmit()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self = self, self.state == .processing else { return }
-            self.state = .idle
-            self.audioLevel = 0.0
-            self.statusText = "Ready"
-            self.liveTranscript = ""
+        // After sending, switch back to listening mode
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            // If Claude already started speaking, don't interrupt
+            guard self.state == .processing else { return }
 
-            // Play any message that arrived during recording
             if let pending = self.pendingMessage {
                 self.pendingMessage = nil
                 self.handleHookMessage(pending)
+            } else {
+                self.liveTranscript = ""
+                self.startListening()
             }
         }
     }
@@ -98,10 +99,9 @@ final class AppState: ObservableObject {
     func handleHookMessage(_ message: String) {
         guard !isMuted, !message.isEmpty else { return }
 
-        // Don't interrupt active recording — queue message for after
+        // Cancel any active recording — hook means Claude has responded
         if state == .listening {
-            pendingMessage = message
-            return
+            VoiceManager.shared.cancelRecording()
         }
 
         VoiceManager.shared.stopSpeaking()

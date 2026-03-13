@@ -240,6 +240,38 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
 
             let lower = text.lowercased()
 
+            // "focus window N" — switch to iTerm2 split pane N
+            let focusPatterns = ["focus window 1", "focus window 2", "focus window 3", "focus window 4",
+                                 "focus window one", "focus window two", "focus window three", "focus window four"]
+            let wordToNum = ["one": 1, "two": 2, "three": 3, "four": 4,
+                             "1": 1, "2": 2, "3": 3, "4": 4]
+            for pattern in focusPatterns {
+                if lower.hasSuffix(pattern) {
+                    let word = pattern.replacingOccurrences(of: "focus window ", with: "")
+                    if let num = wordToNum[word] {
+                        DispatchQueue.main.async {
+                            NSSound(named: .init("Pop"))?.play()
+                            KeySimulator.shared.focusSession(num)
+                            AppState.shared.cancelListening()
+                            AppState.shared.startListening()
+                        }
+                        return
+                    }
+                }
+            }
+
+            // "stop" — send Escape key to iTerm2
+            if lower.hasSuffix("stop") || lower.hasSuffix("stop.") || lower.hasSuffix("stop!") {
+                DispatchQueue.main.async {
+                    print("[ClaudeVoice] Stop triggered — sending Escape")
+                    NSSound(named: .init("Funk"))?.play()
+                    KeySimulator.shared.sendEscape()
+                    AppState.shared.cancelListening()
+                    AppState.shared.startListening()
+                }
+                return
+            }
+
             // "delete message" — clear transcript and restart listening
             if lower.hasSuffix("delete message") || lower.hasSuffix("delete message.") {
                 DispatchQueue.main.async {
@@ -249,6 +281,38 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
                     AppState.shared.startListening()
                 }
                 return
+            }
+
+            // "command/cmd X" — replace transcript with /X, wait for "send it"
+            let cmdRange = lower.range(of: "command ") ?? lower.range(of: "cmd ")
+            if let range = cmdRange {
+                let afterCommand = String(text[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+                // Check if it ends with "send it" — send the command immediately
+                let afterLower = afterCommand.lowercased()
+                if afterLower.hasSuffix("send it") || afterLower.hasSuffix("send it.") {
+                    var cmd = afterCommand
+                    for t in ["send it", "send it.", "send it!"] {
+                        if cmd.lowercased().hasSuffix(t) {
+                            cmd = String(cmd.dropLast(t.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+                            break
+                        }
+                    }
+                    if !cmd.isEmpty {
+                        self?.transcriptionBuffer = "/\(cmd)"
+                        DispatchQueue.main.async {
+                            AppState.shared.stopListening()
+                        }
+                        return
+                    }
+                }
+                // Otherwise just show /X as the live transcript
+                if !afterCommand.isEmpty {
+                    self?.transcriptionBuffer = "/\(afterCommand)"
+                    DispatchQueue.main.async {
+                        AppState.shared.liveTranscript = "/\(afterCommand)"
+                    }
+                    return
+                }
             }
 
             // "send it" — submit transcript
@@ -281,8 +345,8 @@ final class VoiceManager: NSObject, AVAudioPlayerDelegate {
         guard !text.isEmpty else {
             print("[ClaudeVoice] Nothing to submit")
             DispatchQueue.main.async {
-                AppState.shared.state = .idle
-                AppState.shared.statusText = "No speech detected"
+                AppState.shared.liveTranscript = ""
+                AppState.shared.startListening()
             }
             return
         }
