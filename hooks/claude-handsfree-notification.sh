@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code Notification hook — sends permission prompts to Claude Code Hands-Free app
+# Claude Code Notification hook — sends permission prompts to Claude Code Handsfree Voice app
 # Installed in ~/.claude/settings.json under hooks.Notification
 
 INPUT=$(cat)
@@ -9,7 +9,7 @@ if [ -z "$MESSAGE" ]; then
     exit 0
 fi
 
-# Send to Claude Code Hands-Free app's local HTTP server
+# Send to Claude Code Handsfree Voice app's local HTTP server
 curl -s -X POST "http://localhost:27182/hook/notification" \
     -H "Content-Type: application/json" \
     -d "$(jq -n --arg msg "$MESSAGE" '{message: $msg}')" \

@@ -2,20 +2,20 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="ClaudeHandsFree"
-APP_BUNDLE="${APP_NAME}.app"
+EXEC_NAME="ClaudeHandsfreeVoice"
+APP_BUNDLE="Claude Code Handsfree Voice.app"
 HOOK_SCRIPT="${SCRIPT_DIR}/hooks/claude-handsfree-stop.sh"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 
-echo "=== Claude Code Hands-Free Installer ==="
+echo "=== Claude Code Handsfree Voice Installer ==="
 echo ""
 
 # Step 1: Build
-echo "[1/4] Building ${APP_NAME}..."
+echo "[1/4] Building ${EXEC_NAME}..."
 cd "$SCRIPT_DIR"
 swift build -c release 2>&1 | tail -5
 
-EXEC_PATH=$(swift build -c release --show-bin-path)/${APP_NAME}
+EXEC_PATH=$(swift build -c release --show-bin-path)/${EXEC_NAME}
 if [ ! -f "$EXEC_PATH" ]; then
     echo "ERROR: Build failed. Binary not found at $EXEC_PATH"
     exit 1
@@ -102,7 +102,7 @@ echo ""
 echo "=== How it works ==="
 echo ""
 echo "  - When Claude finishes responding, the Stop hook fires"
-echo "  - Claude Code Hands-Free reads the response aloud via macOS TTS"
+echo "  - Claude Code Handsfree Voice reads the response aloud via macOS TTS"
 echo "  - After speaking, it activates voice mode (holds Space)"
 echo "  - Say 'ok reply' or click the stop button to submit"
 echo "  - Claude processes your voice input, and the cycle repeats"

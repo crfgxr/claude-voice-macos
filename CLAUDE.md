@@ -12,10 +12,10 @@ make run
 This builds, kills the running app, removes it from /Applications, reinstalls, and opens it. Equivalent to:
 ```bash
 swift build -c release
-pkill -f "ClaudeHandsFree" 2>/dev/null
-rm -rf /Applications/ClaudeHandsFree.app
-cp -R ClaudeHandsFree.app /Applications/ClaudeHandsFree.app
-open /Applications/ClaudeHandsFree.app
+pkill -f "ClaudeHandsfreeVoice" 2>/dev/null
+rm -rf "/Applications/Claude Code Handsfree Voice.app"
+cp -R "Claude Code Handsfree Voice.app" "/Applications/Claude Code Handsfree Voice.app"
+open "/Applications/Claude Code Handsfree Voice.app"
 ```
 
 **Always verify the floating panel is visible after launch.** The panel uses `canBecomeKey: false` so it must use `orderFrontRegardless()`, never `makeKeyAndOrderFront()`. Ad-hoc codesign changes identity each rebuild which can invalidate macOS permissions.

@@ -26,15 +26,21 @@ struct ContentView: View {
                 .frame(height: 32)
                 .frame(maxWidth: .infinity)
 
-                Button(action: {
-                    NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.universalaccess?SpokenContent")!)
-                }) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 8))
-                        .foregroundColor(Color(hex: "6B6680"))
-                        .frame(width: 14, height: 14)
+                HStack(spacing: 3) {
+                    Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
+                        .font(.system(size: 7))
+                        .foregroundColor(Color(hex: "6B6680").opacity(0.6))
+
+                    Button(action: {
+                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.universalaccess?SpokenContent")!)
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 8))
+                            .foregroundColor(Color(hex: "6B6680"))
+                            .frame(width: 14, height: 14)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 .offset(x: -2, y: 2)
             }
             .padding(.horizontal, 12)

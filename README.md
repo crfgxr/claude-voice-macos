@@ -1,4 +1,4 @@
-# Claude Code Hands-Free macOS
+# Claude Code Handsfree Voice macOS
 
 A native macOS menu bar app for hands-free voice interaction with [Claude Code](https://claude.ai/code) CLI.
 
@@ -56,7 +56,7 @@ Add the stop hook to your Claude Code settings (`~/.claude/settings.json`):
 
 ## Usage
 
-1. Launch **ClaudeHandsFree** — a floating panel and menu bar icon appear
+1. Launch **Claude Code Handsfree Voice** — a floating panel and menu bar icon appear
 2. Run Claude Code in iTerm2
 3. When Claude responds, the app reads it aloud
 4. After speaking, it automatically starts listening
