@@ -14,9 +14,34 @@ extension Color {
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @State private var currentHint = HintProvider.random()
+    @State private var hintOpacity: Double = 0
+
+    private let hintTimer = Timer.publish(every: 12, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: 0) {
+            // Hint bar — always visible, centered
+            Text(currentHint)
+                .font(.system(size: 8, weight: .medium))
+                .foregroundColor(Color(hex: "A78BFA").opacity(0.8))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 14)
+                .padding(.top, 6)
+                .padding(.bottom, 2)
+                .opacity(hintOpacity)
+                .onReceive(hintTimer) { _ in
+                    withAnimation(.easeOut(duration: 0.4)) { hintOpacity = 0 }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        currentHint = HintProvider.random()
+                        withAnimation(.easeIn(duration: 0.5)) { hintOpacity = 1 }
+                    }
+                }
+                .onAppear {
+                    withAnimation(.easeIn(duration: 0.6).delay(0.5)) { hintOpacity = 1 }
+                }
+
             // Top: waveform with settings button
             ZStack(alignment: .topTrailing) {
                 WaveformView(
@@ -126,7 +151,7 @@ struct ContentView: View {
             .padding(.bottom, 8)
             .padding(.top, 4)
         }
-        .frame(width: 300, height: 76)
+        .frame(width: 300, height: 88)
         .background(
             RoundedRectangle(cornerRadius: 18)
                 .fill(Color(hex: "1C1A2E"))
@@ -165,5 +190,26 @@ struct ContentView: View {
         case .speaking: return Color(hex: "6B6680")
         case .processing: return Color(hex: "F59E0B").opacity(0.7)
         }
+    }
+}
+
+enum HintProvider {
+    private static let hints = [
+        "Say \"send it\" to submit your message",
+        "Say \"stop\" to interrupt Claude (sends Escape)",
+        "Say \"delete message\" to clear and start over",
+        "Say \"cmd clear\" to type /clear as a slash command",
+        "Say \"focus window 2\" to switch iTerm2 pane",
+        "Start talking while Claude speaks to barge in",
+        "Change response mode in the menu bar",
+        "Use \"command\" + any word for slash commands",
+        "Mute icon stops TTS and cancels recording",
+        "Unmute to jump straight into listening mode",
+        "Claude reads responses aloud, then listens for you",
+        "Say \"focus window 1-4\" to switch split panes",
+    ]
+
+    static func random() -> String {
+        hints.randomElement() ?? hints[0]
     }
 }
