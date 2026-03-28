@@ -84,16 +84,21 @@ struct ContentView: View {
 
                 // Mute button — stops speaking and cancels listening
                 Button(action: {
-                    if appState.state == .speaking {
-                        VoiceManager.shared.stopSpeaking()
-                        appState.state = .idle
-                        appState.audioLevel = 0.0
-                        appState.statusText = "Ready"
+                    if appState.isMuted {
+                        appState.isMuted = false
+                        appState.startListening()
+                    } else {
+                        if appState.state == .speaking {
+                            VoiceManager.shared.stopSpeaking()
+                            appState.state = .idle
+                            appState.audioLevel = 0.0
+                            appState.statusText = "Ready"
+                        }
+                        if appState.state == .listening {
+                            appState.cancelListening()
+                        }
+                        appState.isMuted = true
                     }
-                    if appState.state == .listening {
-                        appState.cancelListening()
-                    }
-                    appState.isMuted.toggle()
                 }) {
                     Image(systemName: appState.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                         .font(.system(size: 10))
